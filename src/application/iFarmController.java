@@ -1,5 +1,6 @@
 package application;
 
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.image.ImageView;
 import javafx.scene.control.Alert;
@@ -49,11 +50,11 @@ public class iFarmController {
     @FXML
     private Button btnScanFarm;
     
-    private ItemContainer rootItemContainer = new ItemContainer("Farm", 0, 0, 0, 600, 800, 0);
+    private ItemContainer rootItemContainer = new ItemContainer("Farm", 0, 0, 0, 600, 800, 0); // Farm Item Container that will act as the root
 
-    private TreeItem<String> rootItem = new TreeItem<>(rootItemContainer.getName());
+    private TreeItem<String> rootItem = new TreeItem<>(rootItemContainer.getName()); // Set the root of the Item Tree
     
-    private ArrayList<Object> itemList = new ArrayList<>();
+    private ArrayList<Object> itemList = new ArrayList<>(); // General list that holds existing Item and Item Container objects
     
     private Drone drone;
     
@@ -444,68 +445,66 @@ public class iFarmController {
 
         Stage stage = (Stage) editDialog.getDialogPane().getScene().getWindow();
         stage.setAlwaysOnTop(true);
+        
 
-        editDialog.setResultConverter(dialogButton -> {
-            // Handle the Save Changes button action
-            if (dialogButton == saveChangesButton) {
-                try {
-                    // Create a dummy object with the updated values. 
-                    Item dummyItem = new Item(
-                        nameField.getText(),
-                        Double.parseDouble(priceField.getText()),
-                        Double.parseDouble(locationXField.getText()),
-                        Double.parseDouble(locationYField.getText()),
-                        Double.parseDouble(lengthField.getText()),
-                        Double.parseDouble(widthField.getText()),
-                        Double.parseDouble(heightField.getText())
-                    );
-                    
-                    // Check if the dummy item overlaps with other items
-                    if (isOverlapping(dummyItem, selectedItem[0].getParent())) {
-                        showAlert("Error", "Items are overlapping.");
-                        return null;
-                    }
+        Button saveChangesButtonNode = (Button) editDialog.getDialogPane().lookupButton(saveChangesButton);
+        saveChangesButtonNode.setOnAction(event -> {
+            try {
+                // Create a dummy object with the updated values.
+                Item dummyItem = new Item(
+                    nameField.getText(),
+                    Double.parseDouble(priceField.getText()),
+                    Double.parseDouble(locationXField.getText()),
+                    Double.parseDouble(locationYField.getText()),
+                    Double.parseDouble(lengthField.getText()),
+                    Double.parseDouble(widthField.getText()),
+                    Double.parseDouble(heightField.getText())
+                );
 
-                    // Check if the dummy item is within its parent's bounds
-                    if (isWithinBounds(selectedItem[0].getParent(), dummyItem)) {
-                        double deltaX = dummyItem.getLocationX() - selectedItem[0].getLocationX();
-                        double deltaY = dummyItem.getLocationY() - selectedItem[0].getLocationY();
-
-                        moveItems(selectedItem[0], deltaX, deltaY);
-
-                        // Update the real Item object with the changed values
-                        selectedItem[0].setName(dummyItem.getName());
-                        selectedItem[0].setPrice(dummyItem.getPrice());
-                        selectedItem[0].setLocationX(dummyItem.getLocationX());
-                        selectedItem[0].setLocationY(dummyItem.getLocationY());
-                        selectedItem[0].setLength(dummyItem.getLength());
-                        selectedItem[0].setWidth(dummyItem.getWidth());
-                        selectedItem[0].setHeight(dummyItem.getHeight());
-
-                        selectedTreeItem.setValue(selectedItem[0].getName());
-
-                        // Redraw the edited Item
-                        drawItem(selectedItem[0]);
-                    } else {
-                        showAlert("Error", "The updated item is not within its parent's bounds.");
-                    }
-                } catch (Exception e) {
-                    showAlert("Error", "An error occurred while updating the item: " + e.getMessage());
+                // Check if the dummy item overlaps with other items
+                
+                if (isOverlapping(dummyItem, selectedItem[0].getParent())) {
+                    showAlert2("Error", "Items are overlapping.");
+                    return;
                 }
-            }
 
-            return null; // Don't return anything for the Save Changes button
+                // Check if the dummy item is within its parent's bounds
+                if (isWithinBounds(selectedItem[0].getParent(), dummyItem)) {
+                    double deltaX = dummyItem.getLocationX() - selectedItem[0].getLocationX();
+                    double deltaY = dummyItem.getLocationY() - selectedItem[0].getLocationY();
+
+                    moveItems(selectedItem[0], deltaX, deltaY);
+
+                    // Update the real Item object with the changed values
+                    selectedItem[0].setName(dummyItem.getName());
+                    selectedItem[0].setPrice(dummyItem.getPrice());
+                    selectedItem[0].setLocationX(dummyItem.getLocationX());
+                    selectedItem[0].setLocationY(dummyItem.getLocationY());
+                    selectedItem[0].setLength(dummyItem.getLength());
+                    selectedItem[0].setWidth(dummyItem.getWidth());
+                    selectedItem[0].setHeight(dummyItem.getHeight());
+
+                    selectedTreeItem.setValue(selectedItem[0].getName()); // Update Item Tree, in case the name was changed
+
+                    // Redraw the edited Item
+                    drawItem(selectedItem[0]);
+                } else {
+                    showAlert2("Error", "The updated item is not within its parent's bounds.");
+                }
+            } catch (Exception e) {
+                showAlert2("Error", "An error occurred while updating the item: " + e.getMessage());
+            }
         });
 
         // Add a separate handler for the Delete button
         Button deleteButtonNode = (Button) editDialog.getDialogPane().lookupButton(deleteButton);
         deleteButtonNode.setOnAction(event -> {
             // Handle the Delete button action
-            deleteItem(selectedItem[0]);
-            selectedItem[0].getParent().removeItem(selectedItem[0]);
+            deleteItem(selectedItem[0]); // Deletes item from Visualizer and removes it from general Item list
+            selectedItem[0].getParent().removeItem(selectedItem[0]); // Remove deleted item from parent's Item list. Avoids phantom items.
 
-            TreeItem<String> parentItem = selectedTreeItem.getParent();
-            parentItem.getChildren().remove(selectedTreeItem);
+            TreeItem<String> thisItem = selectedTreeItem.getParent();
+            thisItem.getChildren().remove(selectedTreeItem);	// Delete item form Item Tree
         });
 
         editDialog.showAndWait();
@@ -527,13 +526,18 @@ public class iFarmController {
 
         String selectedItemName = selectedTreeItem.getValue();
 
-        if (isItemContainer(selectedItemName)) {
-            ItemContainer target = findItemContainer(selectedItemName);
-            target.setTargetX();
+        if (isItemContainer(selectedItemName)) {	// Check if it selected item is an Item Container
+            ItemContainer target = findItemContainer(selectedItemName); // Get the Item Container
+            
+            // Set the center coordinates that the drone flies to
+            target.setTargetX();	
             target.setTargetY();
+            
+            // Fly the drone to the Item container
             drone.goToItem(target.getTargetX(), target.getTargetY());
             return;
         } else {
+        	// Same as above but for an Item object
             Item target = findItem(selectedItemName);
             target.setTargetX();
             target.setTargetY();
@@ -575,13 +579,22 @@ public class iFarmController {
             double parentXend = parentXstart + item.getWidth();
             double parentYstart = item.getLocationY();
             double parentYend = parentYstart + item.getLength();
-
-            if (((newXstart < parentXend && newYstart < parentYend && newXstart > parentXstart && newYstart > parentYstart) ||
-                (newXstart < parentXend && newYend < parentYend && newXstart > parentXstart && newYend > parentYstart) ||
-                (newXend < parentXend && newYstart < parentYend && newXend > parentXstart && newYstart > parentYstart) ||
-                (newXend < parentXend && newYend < parentYend && newXend > parentXstart && newYend > parentYstart))&&(!newItem.getName().equals(item.getName()))) {
-                return true; // Overlapping with at least one item, ignore the same name item as original item is still present and may overlap with it's updated position
+            
+            if (newXstart < parentXend && newXend > parentXstart && newYstart < parentYend && newYend > parentYstart && !newItem.getName().equals(item.getName())) {
+                return true; // Rectangles overlap
             }
+
+           // if (((newXstart <= parentXend && newYstart <= parentYend && newXstart >= parentXstart && newYstart >= parentYstart) ||
+              //  (newXstart <= parentXend && newYend <= parentYend && newXstart >= parentXstart && newYend >= parentYstart) ||
+             //   (newXend <= parentXend && newYstart <= parentYend && newXend >= parentXstart && newYstart >= parentYstart) ||
+              //  (newXend <= parentXend && newYend <= parentYend && newXend >= parentXstart && newYend >= parentYstart))&&(!newItem.getName().equals(item.getName()))) {
+             //   return true; // Overlapping with at least one item, ignore the same name item as original item is still present and may overlap with it's updated position
+            //}else if ((parentXstart < newXend && parentYstart < newYend && parentXstart > newXstart && parentYstart > newYstart) ||
+            //		(parentXstart < newXend && parentYend < newYend && parentXstart > newXstart && parentYend > newYstart) ||
+            	//	(parentXend < newXend && parentYstart < newYend && parentXend > newXstart && parentYstart > newYstart) ||
+            	//	(parentXend < newXend && parentYend < newYend && parentXend > newXstart && parentYend > newYstart)){
+            	//		return true;
+           // }
         }
 
         return false; // Not overlapping with any items
@@ -634,7 +647,21 @@ public class iFarmController {
         alert.setContentText(content);
         Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
         stage.setAlwaysOnTop(true);
+        stage.setResizable(true);
         alert.showAndWait();
+    }
+    
+    // Shows an alert correctly inside of button handler by running it on correct thread
+    private void showAlert2(String title, String content) {
+    	 Platform.runLater(() -> {
+    	        Alert alert = new Alert(Alert.AlertType.ERROR);
+    	        alert.setTitle(title);
+    	        alert.setHeaderText(null);
+    	        alert.setContentText(content);
+    	        Stage stage = (Stage) alert.getDialogPane().getScene().getWindow();
+    	        stage.setAlwaysOnTop(true);
+    	        alert.showAndWait();
+    	    });
     }
     
     // Checks if the selected tree item is item container
@@ -650,7 +677,7 @@ public class iFarmController {
     // Returns item container that corresponds to the selected tree item
     private ItemContainer findItemContainer(String name) {
         for (Object item : itemList) {
-            if (((ItemContainer) item).getName().equals(name) && ((ItemContainer) item).type().equals("Container")) {
+            if (((Item) item).getName().equals(name) &&  ((Item) item).type().equals("Container")) {
                 return (ItemContainer) item; 
             }
         }

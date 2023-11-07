@@ -60,14 +60,14 @@ public class Drone {
             Timeline rotate90_3 = rotate(90);
             Timeline moveLeft2 = moveX(xMove + droneWidth);
             Timeline rotate90_4 = rotate(0);
-
+            // Add timelines to animation
             animation.getChildren().addAll(moveDown, rotate90, moveLeft, rotate90_2, moveUp, rotate90_3, moveLeft2, rotate90_4);
         }
         Timeline moveDown_2 = moveY(bottomY);
         animation.getChildren().add(moveDown_2);
 
         animation.play();
-       // System.out.println("x pos: "+droneImage.getTranslateX()+" y pos: "+ droneImage.getTranslateY());
+       
         animation.setOnFinished(event -> returnHome());
         
         
@@ -89,22 +89,23 @@ public class Drone {
         KeyFrame rotateKeyFrame = new KeyFrame(Duration.seconds(1), rotateKeyValue);
         rotateTimeline.getKeyFrames().add(rotateKeyFrame);
         
-        // Create a timeline for translation
-        Timeline translateTimeline = new Timeline();
+        // Create a timeline for diagonal movement
+        Timeline diagonalTimeline = new Timeline();
         KeyValue xKeyValue = new KeyValue(droneImage.translateXProperty(), targetX);
         KeyValue yKeyValue = new KeyValue(droneImage.translateYProperty(), targetY);
-        KeyFrame translateKeyFrame = new KeyFrame(Duration.seconds(1), xKeyValue, yKeyValue);
-        translateTimeline.getKeyFrames().add(translateKeyFrame);
+        KeyFrame diagonalKeyFrame = new KeyFrame(Duration.seconds(1), xKeyValue, yKeyValue);
+        diagonalTimeline.getKeyFrames().add(diagonalKeyFrame);
         
         // Create a sequential transition to play both animations
-        SequentialTransition returnHomeAnimation = new SequentialTransition(rotateTimeline, translateTimeline);
+        SequentialTransition returnHomeAnimation = new SequentialTransition(rotateTimeline, diagonalTimeline);
         
-        // Set an event handler to reset the rotation to 0 when the animation is finished
+        
         
         
         // Play the animation
         returnHomeAnimation.play();
         returnHomeAnimation.setOnFinished(event -> 
+        	// Reset drone rotation to 0
             droneImage.setRotate(0)
         );
     }
@@ -124,15 +125,15 @@ public class Drone {
         KeyFrame rotateKeyFrame = new KeyFrame(Duration.seconds(1), rotateKeyValue);
         rotateTimeline.getKeyFrames().add(rotateKeyFrame);
         
-        // Create a timeline for translation
-        Timeline translateTimeline = new Timeline();
+        // Create a timeline for diagonal movement
+        Timeline diagonalTimeline = new Timeline();
         KeyValue xKeyValue = new KeyValue(droneImage.translateXProperty(), targetX);
         KeyValue yKeyValue = new KeyValue(droneImage.translateYProperty(), targetY);
-        KeyFrame translateKeyFrame = new KeyFrame(Duration.seconds(1), xKeyValue, yKeyValue);
-        translateTimeline.getKeyFrames().add(translateKeyFrame);
+        KeyFrame diagonalKeyFrame = new KeyFrame(Duration.seconds(1), xKeyValue, yKeyValue);
+        diagonalTimeline.getKeyFrames().add(diagonalKeyFrame);
         
         // Create a sequential transition to play both animations
-        SequentialTransition goToItemAnimation = new SequentialTransition(rotateTimeline, translateTimeline);
+        SequentialTransition goToItemAnimation = new SequentialTransition(rotateTimeline, diagonalTimeline);
         
         // Set an event handler to reset the rotation to 0 when the animation is finished
         
@@ -149,14 +150,14 @@ public class Drone {
         KeyValue keyValue = new KeyValue(droneImage.translateYProperty(), to);
         KeyFrame keyFrame = new KeyFrame(duration, keyValue);
         return new Timeline(keyFrame);
-    }
+    } // Move drone up or down the Y axis
     
     private Timeline moveX(double dist) {
         Duration duration = Duration.seconds(0.2);
         KeyValue keyValue = new KeyValue(droneImage.translateXProperty(),-dist);
         KeyFrame keyFrame = new KeyFrame(duration, keyValue);
         return new Timeline(keyFrame);
-    }
+    } // Move drone to the left on X axis
     
 
     private Timeline rotate(double angle) {
@@ -164,5 +165,5 @@ public class Drone {
         KeyValue keyValue = new KeyValue(droneImage.rotateProperty(), angle);
         KeyFrame keyFrame = new KeyFrame(duration, keyValue);
         return new Timeline(keyFrame);
-    }
+    } // Rotate drone
 }

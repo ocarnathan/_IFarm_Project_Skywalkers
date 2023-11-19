@@ -1,0 +1,29 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "iFarm",
+            "request": "launch",
+            "mainClass": "application.iFarm",
+            "projectName": "_IFarm_Project_Skywalkers"
+        },
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "iFarm",
+            "request": "launch",
+            "vmArgs": "--module-path /Users/obiec/Downloads/javafx-sdk-21.0.1/lib --add-modules javafx.controls,javafx.fxml",
+            "mainClass": "application.iFarm",
+            "projectName": "_IFarm_Project_Skywalkers_b4c4e1da"
+        }
+    ]
+}
